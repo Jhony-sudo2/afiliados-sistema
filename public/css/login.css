@@ -1,0 +1,41 @@
+/* ── CSS ── */
+.login-wrapper {
+display: grid;
+grid-template-columns: 1fr 1fr;
+min-height: 100vh;
+}
+
+.login-brand {
+background: #1a2744;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 1.5rem;
+padding: 3rem 2rem;
+}
+
+.login-logo {
+max-width: 220px; /* ajusta al tamaño de tu logo */
+width: 100%;
+object-fit: contain;
+}
+
+.login-brand p {
+color: #8aaeff;
+font-size: 14px;
+text-align: center;
+}
+
+.login-form {
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: 3rem 2.5rem;
+}
+
+/* Responsive: una columna en móvil */
+@media (max-width: 640px) {
+.login-wrapper { grid-template-columns: 1fr; }
+.login-brand { padding: 2rem 1rem; min-height: 180px; }
+}
