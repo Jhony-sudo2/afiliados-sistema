@@ -1,7 +1,6 @@
 <div class="page-head">
     <div>
         <h1>Vinculación de candidato</h1>
-        <p class="small">Reglas tomadas del Excel: algunos puestos requieren departamento, otros municipio y otros casilla.</p>
     </div>
 </div>
 
@@ -88,6 +87,7 @@
                         <th>Puesto</th>
                         <th>Departamento</th>
                         <th>Municipio</th>
+                        <th>Estado</th>
                         <th>Casilla</th>
                         <th>Acciones</th>
                     </tr>
@@ -99,6 +99,7 @@
                             <td><?= e($row['position_name']) ?></td>
                             <td><?= e($row['department_name'] ?: '-') ?></td>
                             <td><?= e($row['municipality_name'] ?: '-') ?></td>
+                            <td> <?= $row['confirmed'] ? 'Confirmado' : 'En espera' ?> </td>
                             <td><?= e($row['slot'] ?: '-') ?></td>
                             <td class="actions">
                                 <a class="btn-secondary btn-sm" href="/candidate-assignments?id=<?= e($row['id']) ?>">Editar</a>
@@ -106,6 +107,11 @@
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                                     <button type="submit" class="btn-secondary btn-sm">Eliminar</button>
+                                </form>
+                                <form method="post" action="/candidate-assignments/confirm">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= e($row['id']) ?>">
+                                    <button type="submit" class="btn-secondary btn-sm">Confirmar</button>
                                 </form>
                             </td>
                         </tr>

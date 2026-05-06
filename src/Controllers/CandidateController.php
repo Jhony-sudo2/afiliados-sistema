@@ -100,6 +100,67 @@ final class CandidateController
         redirect('/candidate-assignments');
     }
 
+    public static function confirm(): void
+{
+    Auth::requireRole(['ADMINISTRADOR', 'DELEGADO DEPARTAMENTAL', 'DELEGADO MUNICIPAL']);
+
+    if (!Csrf::validate($_POST['_token'] ?? null)) {
+        flash('error', 'Token CSRF inválido.');
+        redirect('/candidate-assignments');
+    }
+
+    $id = request_int('id');
+    if (!$id) {
+        flash('error', 'Vinculación no encontrada.');
+        redirect('/candidate-assignments');
+    }
+
+    $pdo = Database::connection();
+
+    // Traer los datos de esta vinculación
+    $stmt = $pdo->prepare('
+        SELECT position_id, department_id, municipality_id
+          FROM candidate_assignments
+         WHERE id = :id
+         LIMIT 1
+    ');
+    $stmt->execute(['id' => $id]);
+    $assignment = $stmt->fetch();
+
+    if (!$assignment) {
+        flash('error', 'Vinculación no encontrada.');
+        redirect('/candidate-assignments');
+    }
+
+    // Verificar si ya hay alguien confirmado en ese puesto/depto/municipio
+    $stmt = $pdo->prepare('
+        SELECT COUNT(*) FROM candidate_assignments
+         WHERE position_id     = :position_id
+           AND department_id   = :department_id
+           AND municipality_id = :municipality_id
+           AND confirmed       = 1
+           AND id             != :id
+    ');
+    $stmt->execute([
+        'position_id'     => $assignment['position_id'],
+        'department_id'   => $assignment['department_id'],
+        'municipality_id' => $assignment['municipality_id'],
+        'id'              => $id,
+    ]);
+
+    if ((int) $stmt->fetchColumn() > 0) {
+        flash('error', 'Ya existe un candidato confirmado para ese puesto, departamento y municipio.');
+        redirect('/candidate-assignments');
+    }
+
+    $pdo->prepare('
+        UPDATE candidate_assignments SET confirmed = 1 WHERE id = :id
+    ')->execute(['id' => $id]);
+
+    flash('success', 'Vinculación confirmada.');
+    redirect('/candidate-assignments');
+}
+
     private static function persist(bool $isUpdate): void
     {
         if (!Csrf::validate($_POST['_token'] ?? null)) {

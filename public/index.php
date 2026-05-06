@@ -76,6 +76,7 @@ $routes = [
         '/candidate-assignments/create' => [CandidateController::class, 'store'],
         '/candidate-assignments/edit' => [CandidateController::class, 'update'],
         '/candidate-assignments/delete' => [CandidateController::class, 'delete'],
+        '/candidate-assignments/confirm' => [CandidateController::class, 'confirm'],
 
         '/affiliate-assignments/create' => [AffiliateController::class, 'store'],
         '/affiliate-assignments/edit' => [AffiliateController::class, 'update'],

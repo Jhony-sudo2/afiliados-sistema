@@ -86,20 +86,28 @@ final class PersonController
         }
 
         $stmt = Database::connection()->prepare('
-            SELECT p.*,
-                   cp.id AS candidate_profile_id,
-                   lp.id AS leader_profile_id,
-                   lp.department_id AS leader_department_id,
-                   lp.municipality_id AS leader_municipality_id,
-                   lp.community_id AS leader_community_id,
-                   ap.id AS affiliate_profile_id
-              FROM persons p
-              LEFT JOIN candidate_profiles cp ON cp.person_id = p.id
-              LEFT JOIN leader_profiles lp ON lp.person_id = p.id
-              LEFT JOIN affiliate_profiles ap ON ap.person_id = p.id
-             WHERE p.id = :id
-             LIMIT 1
-        ');
+    SELECT p.*,
+           cp.id AS candidate_profile_id,
+           cp.finiquito AS candidate_finiquito,
+           cp.antecedente_penal AS candidate_antecedente_penal,
+           cp.antecedente_policial AS candidate_antecedente_policial,
+           cp.denuncia AS candidate_denuncia,
+           lp.id AS leader_profile_id,
+           lp.department_id AS leader_department_id,
+           lp.municipality_id AS leader_municipality_id,
+           lp.community_id AS leader_community_id,
+           lp.finiquito AS leader_finiquito,
+           lp.antecedente_penal AS leader_antecedente_penal,
+           lp.antecedente_policial AS leader_antecedente_policial,
+           lp.denuncia AS leader_denuncia,
+           ap.id AS affiliate_profile_id
+      FROM persons p
+      LEFT JOIN candidate_profiles cp ON cp.person_id = p.id
+      LEFT JOIN leader_profiles lp ON lp.person_id = p.id
+      LEFT JOIN affiliate_profiles ap ON ap.person_id = p.id
+     WHERE p.id = :id
+     LIMIT 1
+');
         $stmt->execute(['id' => $id]);
         $record = $stmt->fetch();
 
@@ -135,14 +143,16 @@ final class PersonController
             $pdo->beginTransaction();
 
             $pdo->prepare('
-                INSERT INTO persons (
-                    first_name, last_name, address, phone_primary, phone_secondary, birth_date,
-                    profession, dpi, email, created_by_user_id, created_at, updated_at
-                ) VALUES (
-                    :first_name, :last_name, :address, :phone_primary, :phone_secondary, :birth_date,
-                    :profession, :dpi, :email, :created_by_user_id, NOW(), NOW()
-                )
-            ')->execute($data['person'] + ['created_by_user_id' => Auth::id()]);
+    INSERT INTO persons (
+        first_name, last_name, address, phone_primary, phone_secondary, birth_date,
+        profession, dpi, email, no_empadronamiento, centro_votacion,
+        created_by_user_id, created_at, updated_at
+    ) VALUES (
+        :first_name, :last_name, :address, :phone_primary, :phone_secondary, :birth_date,
+        :profession, :dpi, :email, :no_empadronamiento, :centro_votacion,
+        :created_by_user_id, NOW(), NOW()
+    )
+')->execute($data['person'] + ['created_by_user_id' => Auth::id()]);
 
             $personId = (int) $pdo->lastInsertId();
             self::syncProfiles($pdo, $personId, $data['profiles']);
@@ -195,19 +205,21 @@ final class PersonController
             $pdo->beginTransaction();
 
             $pdo->prepare('
-                UPDATE persons
-                   SET first_name = :first_name,
-                       last_name = :last_name,
-                       address = :address,
-                       phone_primary = :phone_primary,
-                       phone_secondary = :phone_secondary,
-                       birth_date = :birth_date,
-                       profession = :profession,
-                       dpi = :dpi,
-                       email = :email,
-                       updated_at = NOW()
-                 WHERE id = :id
-            ')->execute($data['person'] + ['id' => $id]);
+    UPDATE persons
+       SET first_name = :first_name,
+           last_name = :last_name,
+           address = :address,
+           phone_primary = :phone_primary,
+           phone_secondary = :phone_secondary,
+           birth_date = :birth_date,
+           profession = :profession,
+           dpi = :dpi,
+           email = :email,
+           no_empadronamiento = :no_empadronamiento,
+           centro_votacion = :centro_votacion,
+           updated_at = NOW()
+     WHERE id = :id
+')->execute($data['person'] + ['id' => $id]);
 
             self::syncProfiles($pdo, $id, $data['profiles']);
 
@@ -288,6 +300,8 @@ final class PersonController
                 'profession' => request_str('profession'),
                 'dpi' => request_str('dpi'),
                 'email' => request_str('email'),
+                'no_empadronamiento' => request_str('no_empadronamiento'),  // nuevo
+                'centro_votacion' => request_str('centro_votacion'),     // nuevo
             ],
             'profiles' => [
                 'candidate' => isset($_POST['is_candidate']),
@@ -296,6 +310,11 @@ final class PersonController
                 'leader_department_id' => request_int('leader_department_id'),
                 'leader_municipality_id' => request_int('leader_municipality_id'),
                 'leader_community_id' => request_int('leader_community_id'),
+                // booleanos del perfil
+                'finiquito' => isset($_POST['finiquito']),      // nuevo
+                'antecedente_penal' => isset($_POST['antecedente_penal']),   // nuevo
+                'antecedente_policial' => isset($_POST['antecedente_policial']), // nuevo
+                'denuncia' => isset($_POST['denuncia']),       // nuevo
             ],
         ];
     }
@@ -312,11 +331,13 @@ final class PersonController
             return [false, 'El DPI debe contener exactamente 13 dígitos.'];
         }
 
-        if (!array_filter([
-            $data['profiles']['candidate'],
-            $data['profiles']['leader'],
-            $data['profiles']['affiliate'],
-        ])) {
+        if (
+            !array_filter([
+                $data['profiles']['candidate'],
+                $data['profiles']['leader'],
+                $data['profiles']['affiliate'],
+            ])
+        ) {
             return [false, 'Debes seleccionar al menos un perfil para la persona.'];
         }
 
@@ -328,11 +349,13 @@ final class PersonController
                 return [false, 'Para líder comunitario, departamento y municipio son obligatorios.'];
             }
 
-            if (!AccessScope::assertAllowed(
-                (int) $data['profiles']['leader_department_id'],
-                (int) $data['profiles']['leader_municipality_id'],
-                $data['profiles']['leader_community_id']
-            )) {
+            if (
+                !AccessScope::assertAllowed(
+                    (int) $data['profiles']['leader_department_id'],
+                    (int) $data['profiles']['leader_municipality_id'],
+                    $data['profiles']['leader_community_id']
+                )
+            ) {
                 return [false, 'No puedes registrar líderes fuera de tu alcance.'];
             }
         }
@@ -352,7 +375,14 @@ final class PersonController
 
     private static function syncProfiles(\PDO $pdo, int $personId, array $profiles): void
     {
-        self::syncSimpleProfile($pdo, 'candidate_profiles', $personId, (bool) $profiles['candidate']);
+        $booleans = [
+            'finiquito' => (int) $profiles['finiquito'],
+            'antecedente_penal' => (int) $profiles['antecedente_penal'],
+            'antecedente_policial' => (int) $profiles['antecedente_policial'],
+            'denuncia' => (int) $profiles['denuncia'],
+        ];
+
+        self::syncSimpleProfile($pdo, 'candidate_profiles', $personId, (bool) $profiles['candidate'], $booleans);
         self::syncSimpleProfile($pdo, 'affiliate_profiles', $personId, (bool) $profiles['affiliate']);
 
         if ((bool) $profiles['leader']) {
@@ -362,36 +392,46 @@ final class PersonController
 
             if ($existingId) {
                 $pdo->prepare('
-                    UPDATE leader_profiles
-                       SET department_id = :department_id,
-                           municipality_id = :municipality_id,
-                           community_id = :community_id,
-                           updated_at = NOW()
-                     WHERE person_id = :person_id
-                ')->execute([
-                    'person_id' => $personId,
-                    'department_id' => $profiles['leader_department_id'],
-                    'municipality_id' => $profiles['leader_municipality_id'],
-                    'community_id' => $profiles['leader_community_id'],
-                ]);
+    UPDATE leader_profiles
+       SET department_id = :department_id,
+           municipality_id = :municipality_id,
+           community_id = :community_id,
+           finiquito = :finiquito,
+           antecedente_penal = :antecedente_penal,
+           antecedente_policial = :antecedente_policial,
+           denuncia = :denuncia,
+           updated_at = NOW()
+     WHERE person_id = :person_id
+')->execute([
+                        'person_id' => $personId,
+                        'department_id' => $profiles['leader_department_id'],
+                        'municipality_id' => $profiles['leader_municipality_id'],
+                        'community_id' => $profiles['leader_community_id'],
+                    ] + $booleans);
             } else {
                 $pdo->prepare('
-                    INSERT INTO leader_profiles (
-                        person_id, department_id, municipality_id, community_id, created_at, updated_at
-                    ) VALUES (
-                        :person_id, :department_id, :municipality_id, :community_id, NOW(), NOW()
-                    )
+    INSERT INTO leader_profiles (
+        person_id, department_id, municipality_id, community_id,
+        finiquito, antecedente_penal, antecedente_policial, denuncia,
+        created_at, updated_at
+    ) VALUES (
+        :person_id, :department_id, :municipality_id, :community_id,
+        :finiquito, :antecedente_penal, :antecedente_policial, :denuncia,
+        NOW(), NOW()
+    )
                 ')->execute([
-                    'person_id' => $personId,
-                    'department_id' => $profiles['leader_department_id'],
-                    'municipality_id' => $profiles['leader_municipality_id'],
-                    'community_id' => $profiles['leader_community_id'],
-                ]);
+                            'person_id' => $personId,
+                            'department_id' => $profiles['leader_department_id'],
+                            'municipality_id' => $profiles['leader_municipality_id'],
+                            'community_id' => $profiles['leader_community_id'],
+                        ] + $booleans);
             }
 
             return;
         }
+        if ((bool) $profiles['leader']) {
 
+        }
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM affiliate_assignments aa INNER JOIN leader_profiles lp ON lp.id = aa.leader_profile_id WHERE lp.person_id = :person_id');
         $stmt->execute(['person_id' => $personId]);
         if ((int) $stmt->fetchColumn() > 0) {
@@ -401,16 +441,38 @@ final class PersonController
         $pdo->prepare('DELETE FROM leader_profiles WHERE person_id = :person_id')->execute(['person_id' => $personId]);
     }
 
-    private static function syncSimpleProfile(\PDO $pdo, string $table, int $personId, bool $enabled): void
+    private static function syncSimpleProfile(\PDO $pdo, string $table, int $personId, bool $enabled, array $booleans = []): void
     {
         $stmt = $pdo->prepare("SELECT id FROM {$table} WHERE person_id = :person_id LIMIT 1");
         $stmt->execute(['person_id' => $personId]);
         $exists = (bool) $stmt->fetchColumn();
 
+        $hasBooleans = !empty($booleans) && in_array($table, ['candidate_profiles', 'leader_profiles']);
+
         if ($enabled && !$exists) {
-            $pdo->prepare("INSERT INTO {$table} (person_id, created_at, updated_at) VALUES (:person_id, NOW(), NOW())")
-                ->execute(['person_id' => $personId]);
+            if ($hasBooleans) {
+                $pdo->prepare("
+                INSERT INTO {$table} (person_id, finiquito, antecedente_penal, antecedente_policial, denuncia, created_at, updated_at)
+                VALUES (:person_id, :finiquito, :antecedente_penal, :antecedente_policial, :denuncia, NOW(), NOW())
+            ")->execute(['person_id' => $personId] + $booleans);
+            } else {
+                $pdo->prepare("INSERT INTO {$table} (person_id, created_at, updated_at) VALUES (:person_id, NOW(), NOW())")
+                    ->execute(['person_id' => $personId]);
+            }
             return;
+        }
+
+        if ($enabled && $exists && $hasBooleans) {
+            // Actualizar booleanos si el perfil ya existía
+            $pdo->prepare("
+            UPDATE {$table}
+               SET finiquito = :finiquito,
+                   antecedente_penal = :antecedente_penal,
+                   antecedente_policial = :antecedente_policial,
+                   denuncia = :denuncia,
+                   updated_at = NOW()
+             WHERE person_id = :person_id
+        ")->execute(['person_id' => $personId] + $booleans);
         }
 
         if (!$enabled && $exists) {

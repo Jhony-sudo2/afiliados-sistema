@@ -8,6 +8,12 @@ CREATE TABLE departments (
     name VARCHAR(120) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE regions (
+    id INT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE municipalities (
     id INT PRIMARY KEY,
     department_id INT NOT NULL,
@@ -86,6 +92,8 @@ CREATE TABLE persons (
     profession VARCHAR(120) NOT NULL,
     dpi VARCHAR(13) NOT NULL UNIQUE,
     email VARCHAR(180) NULL,
+    no_empadronamiento VARCHAR(3D0),
+    centro_votacion VARCHAR(30),
     created_by_user_id BIGINT UNSIGNED NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
@@ -95,19 +103,36 @@ CREATE TABLE persons (
 CREATE TABLE candidate_profiles (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     person_id BIGINT UNSIGNED NOT NULL UNIQUE,
+    finiquito BOOLEAN NOT NULL DEFAULT FALSE,
+    antecedente_penal BOOLEAN NOT NULL DEFAULT FALSE,
+    antecedente_policial BOOLEAN NOT NULL DEFAULT FALSE,
+    denuncia BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     CONSTRAINT fk_candidate_profiles_person FOREIGN KEY (person_id) REFERENCES persons(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE leader_type(
+    id INT PRIMARY KEY,
+    name VARCHAR(30) NOT NULL UNIQUE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE leader_profiles (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     person_id BIGINT UNSIGNED NOT NULL UNIQUE,
+    finiquito BOOLEAN NOT NULL DEFAULT FALSE,
+    antecedente_penal BOOLEAN NOT NULL DEFAULT FALSE,
+    antecedente_policial BOOLEAN NOT NULL DEFAULT FALSE,
+    denuncia BOOLEAN NOT NULL DEFAULT FALSE,
     department_id INT NOT NULL,
+    region_id INT,
+    leader_type_id INT NOT NULL,
     municipality_id INT NOT NULL,
     community_id BIGINT UNSIGNED NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
+    CONSTRAINT fk_leader_profiles_type FOREIGN KEY (leader_type_id) REFERENCES leader_type(id);
+    CONSTRAINT fk_leader_profiles_region FOREIGN KEY (region_id) REFERENCES regions(id),
     CONSTRAINT fk_leader_profiles_person FOREIGN KEY (person_id) REFERENCES persons(id),
     CONSTRAINT fk_leader_profiles_department FOREIGN KEY (department_id) REFERENCES departments(id),
     CONSTRAINT fk_leader_profiles_municipality FOREIGN KEY (municipality_id) REFERENCES municipalities(id),
@@ -129,6 +154,7 @@ CREATE TABLE candidate_assignments (
     department_id INT NULL,
     municipality_id INT NULL,
     slot INT NULL,
+    confirmed BOOLEAN NOT NULL DEFAULT FALSE,
     notes VARCHAR(255) NULL,
     created_by_user_id BIGINT UNSIGNED NULL,
     created_at DATETIME NOT NULL,
@@ -176,6 +202,23 @@ INSERT INTO roles (name) VALUES
 ('DELEGADO MUNICIPAL'),
 ('DELEGADO DEPARTAMENTAL'),
 ('LIDER COMUNITARIO');
+
+insert  into leader_type(id,name) values
+(1,"LIDER-MICRO-REGION"),
+(2,"LIDER MUNICIPAL"),
+(3,"LIDER REGIONAL"),
+(4,"LIDER DEPARTAMENTAL"),
+(5,"LIDER NACIONAL");
+
+INSERT INTO regions (id,name) VALUES
+(1,'METROPOLITANA'),
+(2,'NORTE'),
+(3,'NORORIENTE'),
+(4,'SURORIENTE'),
+(5,'CENTRAL'),
+(6,'SUROCCIDENTE'),
+(7,'NOROCCIDENTE'),
+(8,'PETEN');
 
 INSERT INTO departments (id, name) VALUES
 (1, 'Guatemala'),

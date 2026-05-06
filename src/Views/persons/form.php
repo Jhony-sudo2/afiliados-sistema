@@ -1,7 +1,8 @@
 <div class="page-head">
     <div>
         <h1><?= e($title ?? 'Persona') ?></h1>
-        <p class="small">Los campos obligatorios salen del Excel: nombres, apellidos, dirección, teléfono, fecha de nacimiento, profesión y DPI.</p>
+        <p class="small">Los campos obligatorios salen del Excel: nombres, apellidos, dirección, teléfono, fecha de
+            nacimiento, profesión y DPI.</p>
     </div>
     <a class="btn-secondary btn" href="<?= e($backUrl ?? '/persons') ?>">Volver</a>
 </div>
@@ -9,6 +10,9 @@
 <?php
 $record = $record ?? [];
 $currentProfile = $profile ?? 'all';
+$isLeader = $currentProfile === 'leader';
+$isCandidate = $currentProfile === 'candidate';
+
 $form = [
     'first_name' => old('first_name', $record['first_name'] ?? ''),
     'last_name' => old('last_name', $record['last_name'] ?? ''),
@@ -19,12 +23,40 @@ $form = [
     'profession' => old('profession', $record['profession'] ?? ''),
     'dpi' => old('dpi', $record['dpi'] ?? ''),
     'email' => old('email', $record['email'] ?? ''),
-    'is_candidate' => old('is_candidate', !empty($record['candidate_profile_id']) || $currentProfile === 'candidate'),
-    'is_leader' => old('is_leader', !empty($record['leader_profile_id']) || $currentProfile === 'leader'),
+    'is_candidate' => old('is_candidate', !empty($record['candidate_profile_id']) || $isCandidate),
+    'is_leader' => old('is_leader', !empty($record['leader_profile_id']) || $isLeader),
     'is_affiliate' => old('is_affiliate', !empty($record['affiliate_profile_id']) || $currentProfile === 'affiliate'),
     'leader_department_id' => old('leader_department_id', $record['leader_department_id'] ?? ''),
     'leader_municipality_id' => old('leader_municipality_id', $record['leader_municipality_id'] ?? ''),
     'leader_community_id' => old('leader_community_id', $record['leader_community_id'] ?? ''),
+    // Nuevos campos booleanos
+    'finiquito' => old(
+        'finiquito',
+        $currentProfile === 'candidate'
+        ? ($record['candidate_finiquito'] ?? false)
+        : ($record['leader_finiquito'] ?? false)
+    ),
+    'antecedente_penal' => old(
+        'antecedente_penal',
+        $currentProfile === 'candidate'
+        ? ($record['candidate_antecedente_penal'] ?? false)
+        : ($record['leader_antecedente_penal'] ?? false)
+    ),
+    'antecedente_policial' => old(
+        'antecedente_policial',
+        $currentProfile === 'candidate'
+        ? ($record['candidate_antecedente_policial'] ?? false)
+        : ($record['leader_antecedente_policial'] ?? false)
+    ),
+    'denuncia' => old(
+        'denuncia',
+        $currentProfile === 'candidate'
+        ? ($record['candidate_denuncia'] ?? false)
+        : ($record['leader_denuncia'] ?? false)
+    ),
+    'no_empadronamiento' => old('no_empadronamiento', $record['no_empadronamiento'] ?? ''),
+    'centro_votacion' => old('centro_votacion', $record['centro_votacion'] ?? ''),
+
 ];
 ?>
 
@@ -65,6 +97,15 @@ $form = [
                 <input type="text" name="dpi" maxlength="13" value="<?= e($form['dpi']) ?>" required>
             </div>
             <div>
+                <label>No. de empadronamiento</label>
+                <input type="text" name="no_empadronamiento" maxlength="30"
+                    value="<?= e($form['no_empadronamiento']) ?>">
+            </div>
+            <div>
+                <label>Centro de votación</label>
+                <input type="text" name="centro_votacion" maxlength="30" value="<?= e($form['centro_votacion']) ?>">
+            </div>
+            <div>
                 <label>Correo</label>
                 <input type="email" name="email" value="<?= e($form['email']) ?>">
             </div>
@@ -72,57 +113,92 @@ $form = [
                 <label>Perfiles</label>
                 <div class="checkline">
                     <label><input type="checkbox" name="is_candidate" value="1" <?= checked((bool) $form['is_candidate']) ?>> Candidato</label>
-                    <label><input type="checkbox" name="is_leader" value="1" <?= checked((bool) $form['is_leader']) ?>> Líder comunitario</label>
+                    <label><input type="checkbox" name="is_leader" value="1" <?= checked((bool) $form['is_leader']) ?>>
+                        Líder comunitario</label>
                     <label><input type="checkbox" name="is_affiliate" value="1" <?= checked((bool) $form['is_affiliate']) ?>> Afiliado</label>
                 </div>
             </div>
         </div>
 
-        <div class="section-divider">Datos adicionales para líder comunitario</div>
+        <?php if ($isLeader || $isCandidate): ?>
+            <div class="section-divider">Documentos y antecedentes</div>
+
+            <div class="form-grid">
+                <div class="full">
+                    <div class="checkline">
+                        <label>
+                            <input type="checkbox" name="finiquito" value="1" <?= checked((bool) $form['finiquito']) ?>>
+                            Finiquito
+                        </label>
+                        <label>
+                            <input type="checkbox" name="antecedente_penal" value="1" <?= checked((bool) $form['antecedente_penal']) ?>>
+                            Antecedente penal
+                        </label>
+                        <label>
+                            <input type="checkbox" name="antecedente_policial" value="1" <?= checked((bool) $form['antecedente_policial']) ?>>
+                            Antecedente policial
+                        </label>
+                        <label>
+                            <input type="checkbox" name="denuncia" value="1" <?= checked((bool) $form['denuncia']) ?>>
+                            Denuncia
+                        </label>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($isLeader): ?>
+            <div class="section-divider">Datos adicionales para líder comunitario</div>
+
+            <div class="form-grid">
+                <div>
+                    <label>Departamento</label>
+                    <select name="leader_department_id" id="leader_department_id">
+                        <option value="">Seleccione</option>
+                        <?php foreach ($departments as $row): ?>
+                            <option value="<?= e($row['id']) ?>" <?= selected($form['leader_department_id'], $row['id']) ?>>
+                                <?= e($row['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label>Municipio</label>
+                    <select name="leader_municipality_id" id="leader_municipality_id">
+                        <option value="">Seleccione</option>
+                        <?php foreach ($municipalities as $row): ?>
+                            <option value="<?= e($row['id']) ?>" data-department="<?= e($row['department_id']) ?>"
+                                <?= selected($form['leader_municipality_id'], $row['id']) ?>>
+                                <?= e($row['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="full">
+                    <label>Comunidad (opcional)</label>
+                    <select name="leader_community_id" id="leader_community_id">
+                        <option value="">Seleccione</option>
+                        <?php foreach ($communities as $row): ?>
+                            <option value="<?= e($row['id']) ?>" data-department="<?= e($row['department_id']) ?>"
+                                data-municipality="<?= e($row['municipality_id']) ?>" <?= selected($form['leader_community_id'], $row['id']) ?>>
+                                <?= e($row['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <div class="form-grid">
-            <div>
-                <label>Departamento</label>
-                <select name="leader_department_id" id="leader_department_id">
-                    <option value="">Seleccione</option>
-                    <?php foreach ($departments as $row): ?>
-                        <option value="<?= e($row['id']) ?>" <?= selected($form['leader_department_id'], $row['id']) ?>><?= e($row['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <label>Municipio</label>
-                <select name="leader_municipality_id" id="leader_municipality_id">
-                    <option value="">Seleccione</option>
-                    <?php foreach ($municipalities as $row): ?>
-                        <option value="<?= e($row['id']) ?>" data-department="<?= e($row['department_id']) ?>" <?= selected($form['leader_municipality_id'], $row['id']) ?>><?= e($row['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="full">
-                <label>Comunidad (opcional)</label>
-                <select name="leader_community_id" id="leader_community_id">
-                    <option value="">Seleccione</option>
-                    <?php foreach ($communities as $row): ?>
-                        <option
-                            value="<?= e($row['id']) ?>"
-                            data-department="<?= e($row['department_id']) ?>"
-                            data-municipality="<?= e($row['municipality_id']) ?>"
-                            <?= selected($form['leader_community_id'], $row['id']) ?>>
-                            <?= e($row['name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
             <div class="full">
                 <button type="submit">Guardar persona</button>
             </div>
         </div>
-    </form>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    AppForms.bindLocationFilters('leader_department_id', 'leader_municipality_id', 'leader_community_id');
-});
-</script>
+        <?php if ($isLeader): ?>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    AppForms.bindLocationFilters('leader_department_id', 'leader_municipality_id', 'leader_community_id');
+                });
+            </script>
+        <?php endif; ?>
