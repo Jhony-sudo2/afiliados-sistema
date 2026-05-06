@@ -92,7 +92,7 @@ CREATE TABLE persons (
     profession VARCHAR(120) NOT NULL,
     dpi VARCHAR(13) NOT NULL UNIQUE,
     email VARCHAR(180) NULL,
-    no_empadronamiento VARCHAR(3D0),
+    no_empadronamiento VARCHAR(30),
     centro_votacion VARCHAR(30),
     created_by_user_id BIGINT UNSIGNED NULL,
     created_at DATETIME NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE leader_profiles (
     community_id BIGINT UNSIGNED NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
-    CONSTRAINT fk_leader_profiles_type FOREIGN KEY (leader_type_id) REFERENCES leader_type(id);
+    CONSTRAINT fk_leader_profiles_type FOREIGN KEY (leader_type_id) REFERENCES leader_type(id),
     CONSTRAINT fk_leader_profiles_region FOREIGN KEY (region_id) REFERENCES regions(id),
     CONSTRAINT fk_leader_profiles_person FOREIGN KEY (person_id) REFERENCES persons(id),
     CONSTRAINT fk_leader_profiles_department FOREIGN KEY (department_id) REFERENCES departments(id),

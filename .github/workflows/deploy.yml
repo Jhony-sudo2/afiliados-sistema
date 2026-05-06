@@ -1,0 +1,53 @@
+name: Deploy PHP to cPanel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.CPANEL_SSH_KEY }}" > ~/.ssh/cpanel_key
+          chmod 600 ~/.ssh/cpanel_key
+          ssh-keyscan -p "${{ secrets.CPANEL_PORT }}" -H "${{ secrets.CPANEL_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Create remote folder
+        run: |
+          ssh -i ~/.ssh/cpanel_key -p "${{ secrets.CPANEL_PORT }}" \
+            ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} \
+            "mkdir -p ${{ secrets.CPANEL_PATH }}"
+
+      - name: Deploy to cPanel
+        run: |
+          rsync -avz \
+            --delete \
+            --exclude=".git" \
+            --exclude=".github" \
+            --exclude=".env" \
+            --exclude="node_modules" \
+            --exclude="tests" \
+            -e "ssh -i ~/.ssh/cpanel_key -p ${{ secrets.CPANEL_PORT }}" \
+            ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }}
