@@ -1,0 +1,16 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /sistema_semilla/
+
+    # Bloquear acceso directo a carpetas internas
+    RewriteRule ^(vendor|src|database|docs|scripts)(/|$) - [F,L]
+
+    # Bloquear archivos sensibles
+    RewriteRule ^(\.env|composer\.json|composer\.lock|README\.md|\.gitignore)$ - [F,L]
+
+    # Redirigir internamente todo hacia public
+    RewriteRule ^$ public/ [L]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
