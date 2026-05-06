@@ -29,6 +29,8 @@ $form = [
     'leader_department_id' => old('leader_department_id', $record['leader_department_id'] ?? ''),
     'leader_municipality_id' => old('leader_municipality_id', $record['leader_municipality_id'] ?? ''),
     'leader_community_id' => old('leader_community_id', $record['leader_community_id'] ?? ''),
+    'leader_type_id' => old('leader_type_id',$record['leader_type_id'] ?? ''),
+    'leader_region_id' => old('leader_region_id',$record['region_id'] ?? ''),
     // Nuevos campos booleanos
     'finiquito' => old(
         'finiquito',
@@ -152,6 +154,30 @@ $form = [
 
             <div class="form-grid">
                 <div>
+                    <label>Tipo de líder</label>
+                    <select name="leader_type_id" id="leader_type_id">
+                        <option value="">Seleccione</option>
+                        <?php foreach ($leader_types as $row): ?>
+                            <option value="<?= e($row['id']) ?>" <?= selected($form['leader_type_id'], $row['id']) ?>>
+                                <?= e($row['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div id="field_region" style="display:none">
+                    <label>Región</label>
+                    <select name="leader_region_id" id="leader_region_id">
+                        <option value="">Seleccione</option>
+                        <?php foreach ($regions as $row): ?>
+                            <option value="<?= e($row['id']) ?>" <?= selected($form['leader_region_id'], $row['id']) ?>>
+                                <?= e($row['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div id="field_department" style="display:none">
                     <label>Departamento</label>
                     <select name="leader_department_id" id="leader_department_id">
                         <option value="">Seleccione</option>
@@ -162,7 +188,8 @@ $form = [
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div>
+
+                <div id="field_municipality" style="display:none">
                     <label>Municipio</label>
                     <select name="leader_municipality_id" id="leader_municipality_id">
                         <option value="">Seleccione</option>
@@ -174,7 +201,8 @@ $form = [
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="full">
+
+                <div id="field_community" class="full" style="display:none">
                     <label>Comunidad (opcional)</label>
                     <select name="leader_community_id" id="leader_community_id">
                         <option value="">Seleccione</option>
@@ -189,12 +217,60 @@ $form = [
             </div>
         <?php endif; ?>
 
+
         <div class="form-grid">
             <div class="full">
                 <button type="submit">Guardar persona</button>
             </div>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const typeSelect = document.getElementById('leader_type_id');
+                if (!typeSelect) return;
 
+                // Campos por tipo de líder:
+                // 1 = MICRO-REGION  → región, departamento, municipio, comunidad
+                // 2 = MUNICIPAL     → departamento, municipio
+                // 3 = REGIONAL      → región
+                // 4 = DEPARTAMENTAL → departamento
+                // 5 = NACIONAL      → nada
+                const rules = {
+                    '1': ['field_region', 'field_department', 'field_municipality', 'field_community'],
+                    '2': ['field_department', 'field_municipality'],
+                    '3': ['field_region'],
+                    '4': ['field_department'],
+                    '5': [],
+                };
+
+                const allFields = ['field_region', 'field_department', 'field_municipality', 'field_community'];
+
+                function applyRules(val) {
+                    const show = rules[val] ?? [];
+                    allFields.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.style.display = show.includes(id) ? '' : 'none';
+                    });
+
+                    // Limpiar selects ocultos para no enviar valores basura
+                    allFields.forEach(id => {
+                        if (!show.includes(id)) {
+                            const sel = document.querySelector(`#${id} select`);
+                            if (sel) sel.value = '';
+                        }
+                    });
+
+                    // Filtros encadenados depto → municipio solo cuando ambos están visibles
+                    if (show.includes('field_municipality')) {
+                        AppForms.bindLocationFilters('leader_department_id', 'leader_municipality_id', 'leader_community_id');
+                    }
+                }
+
+                typeSelect.addEventListener('change', () => applyRules(typeSelect.value));
+
+                // Aplicar al cargar (modo edición)
+                applyRules(typeSelect.value);
+            });
+        </script>
         <?php if ($isLeader): ?>
             <script>
                 document.addEventListener('DOMContentLoaded', function () {

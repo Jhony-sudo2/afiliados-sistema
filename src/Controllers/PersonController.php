@@ -121,6 +121,7 @@ final class PersonController
 
     public static function store(): void
     {
+        $profile = request_str('profile', 'all'); // 👈 capturar el profile
         Auth::requireLogin();
 
         if (!Csrf::validate($_POST['_token'] ?? null)) {
@@ -134,7 +135,7 @@ final class PersonController
         [$valid, $message] = self::validate($data, true);
         if (!$valid) {
             flash('error', $message);
-            redirect('/persons/create');
+            redirect('/persons/create', ['profile' => $profile]);
         }
 
         $pdo = Database::connection();
@@ -171,12 +172,13 @@ final class PersonController
             }
 
             flash('error', 'No fue posible registrar la persona: ' . $e->getMessage());
-            redirect('/persons/create');
+            redirect('/persons/create', ['profile' => $profile]);
         }
     }
 
     public static function update(): void
     {
+        $profile = request_str('profile', 'all'); // 👈
         Auth::requireLogin();
 
         if (!Csrf::validate($_POST['_token'] ?? null)) {
@@ -196,7 +198,7 @@ final class PersonController
         [$valid, $message] = self::validate($data, false, $id);
         if (!$valid) {
             flash('error', $message);
-            redirect('/persons/edit', ['id' => $id]);
+            redirect('/persons/edit', ['id' => $id, 'profile' => $profile]);
         }
 
         $pdo = Database::connection();
@@ -237,7 +239,7 @@ final class PersonController
             }
 
             flash('error', 'No fue posible actualizar la persona: ' . $e->getMessage());
-            redirect('/persons/edit', ['id' => $id]);
+            redirect('/persons/edit', ['id' => $id, 'profile' => $profile]);
         }
     }
 
@@ -247,10 +249,15 @@ final class PersonController
         $departments = AccessScope::filterDepartments($pdo->query('SELECT id, name FROM departments ORDER BY name')->fetchAll());
         $municipalities = AccessScope::filterMunicipalities($pdo->query('SELECT id, department_id, name FROM municipalities ORDER BY name')->fetchAll());
         $communities = AccessScope::filterCommunities($pdo->query('SELECT id, department_id, municipality_id, name FROM communities WHERE is_active = 1 ORDER BY name')->fetchAll());
+        $regions = $pdo->query('SELECT * from regions')->fetchAll();
+        $leader_types = $pdo->query('SELECT * FROM leader_type')->fetchAll();
+
         $listingMeta = self::listingMeta($profile);
 
         return [
             'record' => $record,
+            'regions' => $regions,
+            'leader_types' => $leader_types,
             'departments' => $departments,
             'municipalities' => $municipalities,
             'communities' => $communities,
@@ -315,6 +322,8 @@ final class PersonController
                 'antecedente_penal' => isset($_POST['antecedente_penal']),   // nuevo
                 'antecedente_policial' => isset($_POST['antecedente_policial']), // nuevo
                 'denuncia' => isset($_POST['denuncia']),       // nuevo
+                'leader_type_id' => request_int('leader_type_id'),
+                'leader_region_id' => request_int('leader_region_id'),
             ],
         ];
     }
@@ -342,21 +351,44 @@ final class PersonController
         }
 
         if ($data['profiles']['leader']) {
-            if (
-                !$data['profiles']['leader_department_id']
-                || !$data['profiles']['leader_municipality_id']
-            ) {
-                return [false, 'Para líder comunitario, departamento y municipio son obligatorios.'];
+            $typeId = (int) $data['profiles']['leader_type_id'];
+
+            if (!$typeId) {
+                return [false, 'Debes seleccionar el tipo de líder.'];
             }
 
-            if (
-                !AccessScope::assertAllowed(
-                    (int) $data['profiles']['leader_department_id'],
-                    (int) $data['profiles']['leader_municipality_id'],
-                    $data['profiles']['leader_community_id']
-                )
-            ) {
-                return [false, 'No puedes registrar líderes fuera de tu alcance.'];
+            // Validar campos requeridos según tipo
+            match ($typeId) {
+                1 => self::validateLeaderFields($data, region: true, department: true, municipality: true),
+                2 => self::validateLeaderFields($data, department: true, municipality: true),
+                3 => self::validateLeaderFields($data, region: true),
+                4 => self::validateLeaderFields($data, department: true),
+                5 => [true, ''], // NACIONAL: no requiere nada
+            };
+
+            [$valid, $message] = match ($typeId) {
+                1 => self::validateLeaderFields($data, region: true, department: true, municipality: true),
+                2 => self::validateLeaderFields($data, department: true, municipality: true),
+                3 => self::validateLeaderFields($data, region: true),
+                4 => self::validateLeaderFields($data, department: true),
+                default => [true, ''],
+            };
+
+            if (!$valid) {
+                return [false, $message];
+            }
+
+            // AccessScope solo cuando hay departamento/municipio
+            if ($data['profiles']['leader_department_id'] && $data['profiles']['leader_municipality_id']) {
+                if (
+                    !AccessScope::assertAllowed(
+                        (int) $data['profiles']['leader_department_id'],
+                        (int) $data['profiles']['leader_municipality_id'],
+                        $data['profiles']['leader_community_id']
+                    )
+                ) {
+                    return [false, 'No puedes registrar líderes fuera de tu alcance.'];
+                }
             }
         }
 
@@ -372,7 +404,26 @@ final class PersonController
 
         return [true, ''];
     }
+    private static function validateLeaderFields(
+        array $data,
+        bool $region = false,
+        bool $department = false,
+        bool $municipality = false
+    ): array {
+        if ($region && !$data['profiles']['leader_region_id']) {
+            return [false, 'Para este tipo de líder, la región es obligatoria.'];
+        }
 
+        if ($department && !$data['profiles']['leader_department_id']) {
+            return [false, 'Para este tipo de líder, el departamento es obligatorio.'];
+        }
+
+        if ($municipality && !$data['profiles']['leader_municipality_id']) {
+            return [false, 'Para este tipo de líder, el municipio es obligatorio.'];
+        }
+
+        return [true, ''];
+    }
     private static function syncProfiles(\PDO $pdo, int $personId, array $profiles): void
     {
         $booleans = [
@@ -390,49 +441,54 @@ final class PersonController
             $stmt->execute(['person_id' => $personId]);
             $existingId = $stmt->fetchColumn();
 
+            $leaderData = [
+                'person_id' => $personId,
+                'leader_type_id' => $profiles['leader_type_id'],
+                'region_id' => $profiles['leader_region_id'] ?: null,
+                'department_id' => $profiles['leader_department_id'] ?: null,
+                'municipality_id' => $profiles['leader_municipality_id'] ?: null,
+                'community_id' => $profiles['leader_community_id'] ?: null,
+            ];
+
             if ($existingId) {
                 $pdo->prepare('
-    UPDATE leader_profiles
-       SET department_id = :department_id,
-           municipality_id = :municipality_id,
-           community_id = :community_id,
-           finiquito = :finiquito,
-           antecedente_penal = :antecedente_penal,
-           antecedente_policial = :antecedente_policial,
-           denuncia = :denuncia,
-           updated_at = NOW()
-     WHERE person_id = :person_id
-')->execute([
-                        'person_id' => $personId,
-                        'department_id' => $profiles['leader_department_id'],
-                        'municipality_id' => $profiles['leader_municipality_id'],
-                        'community_id' => $profiles['leader_community_id'],
-                    ] + $booleans);
+                UPDATE leader_profiles
+                   SET leader_type_id  = :leader_type_id,
+                       region_id       = :region_id,
+                       department_id   = :department_id,
+                       municipality_id = :municipality_id,
+                       community_id    = :community_id,
+                       finiquito            = :finiquito,
+                       antecedente_penal    = :antecedente_penal,
+                       antecedente_policial = :antecedente_policial,
+                       denuncia             = :denuncia,
+                       updated_at      = NOW()
+                 WHERE person_id = :person_id
+            ')->execute($leaderData + $booleans);
             } else {
                 $pdo->prepare('
-    INSERT INTO leader_profiles (
-        person_id, department_id, municipality_id, community_id,
-        finiquito, antecedente_penal, antecedente_policial, denuncia,
-        created_at, updated_at
-    ) VALUES (
-        :person_id, :department_id, :municipality_id, :community_id,
-        :finiquito, :antecedente_penal, :antecedente_policial, :denuncia,
-        NOW(), NOW()
-    )
-                ')->execute([
-                            'person_id' => $personId,
-                            'department_id' => $profiles['leader_department_id'],
-                            'municipality_id' => $profiles['leader_municipality_id'],
-                            'community_id' => $profiles['leader_community_id'],
-                        ] + $booleans);
+                INSERT INTO leader_profiles (
+                    person_id, leader_type_id, region_id,
+                    department_id, municipality_id, community_id,
+                    finiquito, antecedente_penal, antecedente_policial, denuncia,
+                    created_at, updated_at
+                ) VALUES (
+                    :person_id, :leader_type_id, :region_id,
+                    :department_id, :municipality_id, :community_id,
+                    :finiquito, :antecedente_penal, :antecedente_policial, :denuncia,
+                    NOW(), NOW()
+                )
+            ')->execute($leaderData + $booleans);
             }
 
             return;
         }
-        if ((bool) $profiles['leader']) {
 
-        }
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM affiliate_assignments aa INNER JOIN leader_profiles lp ON lp.id = aa.leader_profile_id WHERE lp.person_id = :person_id');
+        $stmt = $pdo->prepare('
+        SELECT COUNT(*) FROM affiliate_assignments aa
+        INNER JOIN leader_profiles lp ON lp.id = aa.leader_profile_id
+        WHERE lp.person_id = :person_id
+    ');
         $stmt->execute(['person_id' => $personId]);
         if ((int) $stmt->fetchColumn() > 0) {
             throw new \RuntimeException('No puedes retirar el perfil de líder porque tiene afiliados vinculados.');
