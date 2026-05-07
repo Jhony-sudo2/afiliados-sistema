@@ -39,7 +39,7 @@ final class AuthController
         }
 
         if (!Auth::attempt($email, $password)) {
-            flash('error', flash('error') ?? 'Credenciales inválidas.');
+            flash('error','Credenciales inválidas.');
             redirect('/login');
         }
 
