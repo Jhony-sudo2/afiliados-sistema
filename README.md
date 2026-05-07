@@ -16,7 +16,7 @@ mysql -u root -p sistema_territorial < database/schema.sql
 5. Crear un usuario administrador inicial:
 
 ```bash
-php scripts/create_admin.php admin@example.com "Cambiar123!" "Administrador General"
+php scripts/create_admin.php admin@example.com "admin_semilla1234" "Administrador General"
 ```
 
 6. Levantar el proyecto:
