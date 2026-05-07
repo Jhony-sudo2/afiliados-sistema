@@ -2,7 +2,7 @@
 
   <!-- Panel izquierdo: logo -->
   <div class="login-brand">
-    <img src="/images/Logo.png" alt="Logo empresa" class="login-logo">
+    <img src="<?= asset('images/Logo.png') ?>" alt="Logo empresa" class="login-logo">
   </div>
 
   <!-- Panel derecho: formulario -->
