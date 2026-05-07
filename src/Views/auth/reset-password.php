@@ -1,8 +1,8 @@
 <h1>Restablecer contraseña</h1>
 <p class="small">La nueva contraseña debe contener al menos 8 caracteres.</p>
 
-<form method="post" action="/reset-password">
-    <?= csrf_field() ?>
+<form method="post" action="<?= app_url('reset-password') ?>">
+        <?= csrf_field() ?>
     <input type="hidden" name="token" value="<?= e($token ?? '') ?>">
 
     <label for="password">Nueva contraseña</label>

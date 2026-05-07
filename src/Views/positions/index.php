@@ -69,8 +69,7 @@
     Editar
 </a>
                                     <?php if ((int) $row['is_active'] === 1): ?>
-                                        <form method="post" action="/positions/delete">
-                                            <?= csrf_field() ?>
+<form method="post" action="<?= app_url('positions/delete') ?>">                                            <?= csrf_field() ?>
                                             <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                                             <button type="submit" class="btn-secondary btn-sm">Desactivar</button>
                                         </form>

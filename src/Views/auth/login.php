@@ -9,8 +9,7 @@
   <div class="login-form">
     <h1>Iniciar sesión</h1>
 
-    <form method="post" action="/login">
-      <?= csrf_field() ?>
+<form method="post" action="<?= app_url('login') ?>">      <?= csrf_field() ?>
       <div class="form-grid">
         <div class="full">
           <label for="email">Correo</label>

@@ -103,13 +103,13 @@
                             <td><?= e($row['slot'] ?: '-') ?></td>
                             <td class="actions">
                                 <a class="btn-secondary btn-sm" href="<?= e(app_url('candidate-assignments?id=' . urlencode((string) $row['id']))) ?>">Editar</a>
-                                <form method="post" action="/candidate-assignments/delete">
-                                    <?= csrf_field() ?>
+<form method="post" action="<?= app_url('candidate-assignments/delete') ?>">
+                                        <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                                     <button type="submit" class="btn-secondary btn-sm">Eliminar</button>
                                 </form>
-                                <form method="post" action="/candidate-assignments/confirm">
-                                    <?= csrf_field() ?>
+<form method="post" action="<?= app_url('candidate-assignments/confirm') ?>">
+                                        <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                                     <button type="submit" class="btn-secondary btn-sm">Confirmar</button>
                                 </form>

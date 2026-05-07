@@ -9,8 +9,8 @@
 </div>
 
 <div class="card">
-    <form method="get" action="/persons" class="filters">
-        <div>
+<form method="get" action="<?= app_url('persons') ?>" class="filters">
+            <div>
             <label>Perfil</label>
             <select name="profile">
                 <option value="all" <?= selected($profile, 'all') ?>>Todos</option>

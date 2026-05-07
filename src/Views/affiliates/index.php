@@ -99,8 +99,7 @@
                             <td><?= e($row['leader_name'] ?: '-') ?></td>
                             <td class="actions">
 <a class="btn-secondary btn-sm" href="<?= e(app_url('affiliate-assignments?id=' . urlencode((string) $row['id']))) ?>">Editar</a>                                
-                                <form method="post" action="/affiliate-assignments/delete">
-                                    <?= csrf_field() ?>
+<form method="post" action="<?= app_url('affiliate-assignments/delete') ?>">                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                                     <button type="submit" class="btn-secondary btn-sm">Eliminar</button>
                                 </form>

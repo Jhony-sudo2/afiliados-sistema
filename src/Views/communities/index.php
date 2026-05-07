@@ -70,8 +70,8 @@
                             <td class="actions">
                                 <a class="btn-secondary btn-sm" href="<?= e(app_url('communities?id=' . urlencode((string) $row['id']))) ?>">Editar</a>
                                 <?php if ((int) $row['is_active'] === 1): ?>
-                                    <form method="post" action="/communities/delete">
-                                        <?= csrf_field() ?>
+<form method="post" action="<?= app_url('communities/delete') ?>">
+                                    <?= csrf_field() ?>
                                         <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                                         <button type="submit" class="btn-secondary btn-sm">Desactivar</button>
                                     </form>

@@ -43,13 +43,12 @@
                         <a class="btn-secondary btn-sm" href="<?= app_url('users/edit?id=' . urlencode((string) $row['id'])) ?>">
     Editar
 </a>
-                        <form method="post" action="/users/toggle">
-                            <?= csrf_field() ?>
+<form method="post" action="<?= app_url('users/toggle') ?>">                            <?= csrf_field() ?>
                             <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                             <button type="submit" class="btn-secondary btn-sm"><?= (int) $row['is_active'] === 1 ? 'Desactivar' : 'Activar' ?></button>
                         </form>
                         <?php if (!$row['email_verified_at']): ?>
-                            <form method="post" action="/users/resend">
+                            <form method="post" action="<?= app_url('/users/resend') ?>"
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="id" value="<?= e($row['id']) ?>">
                                 <button type="submit" class="btn-secondary btn-sm">Reenviar correo</button>
