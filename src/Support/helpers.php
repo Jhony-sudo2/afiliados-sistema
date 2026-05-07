@@ -10,7 +10,10 @@ function app_env(string $key, ?string $default = null): ?string
     $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
     return $value === false || $value === null || $value === '' ? $default : (string) $value;
 }
-
+function asset(string $path): string
+{
+    return app_url($path);
+}
 function e(mixed $value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
