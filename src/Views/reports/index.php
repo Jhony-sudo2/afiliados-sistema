@@ -4,9 +4,11 @@
         <p class="small">Exportación rápida a CSV y resúmenes por ubicación.</p>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <a class="btn-secondary btn" href="/reports/export?type=candidates">Exportar candidatos</a>
-        <a class="btn-secondary btn" href="/reports/export?type=leaders">Exportar líderes</a>
-        <a class="btn-secondary btn" href="/reports/export?type=affiliates">Exportar afiliados</a>
+        <a class="btn-secondary btn" href="<?= app_url('reports/export?type=candidates') ?>">Exportar candidatos</a>
+
+<a class="btn-secondary btn" href="<?= app_url('reports/export?type=leaders') ?>">Exportar líderes</a>
+
+<a class="btn-secondary btn" href="<?= app_url('reports/export?type=affiliates') ?>">Exportar afiliados</a>
     </div>
 </div>
 

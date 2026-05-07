@@ -13,6 +13,5 @@
 
     <div style="margin-top:16px; display:flex; gap:10px;">
         <button type="submit">Actualizar contraseña</button>
-        <a class="btn-secondary btn" href="/login">Cancelar</a>
-    </div>
+<a class="btn-secondary btn" href="<?= app_url('login') ?>">Cancelar</a>    </div>
 </form>

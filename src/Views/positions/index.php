@@ -36,7 +36,7 @@
                 <div class="full">
                     <button type="submit"><?= $editRecord ? 'Actualizar' : 'Registrar' ?></button>
                     <?php if ($editRecord): ?>
-                        <a class="btn-secondary btn" href="/positions">Cancelar</a>
+                        <a class="btn-secondary btn" href="<?= app_url('positions') ?>">Cancelar</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -65,7 +65,9 @@
                             <td><?= $row['requires_slot'] ? e(($row['slot_min'] ?? '-') . ' a ' . ($row['slot_max'] ?? '-')) : 'No' ?></td>
                             <td class="actions">
                                 <?php if (has_role('ADMINISTRADOR')): ?>
-                                    <a class="btn-secondary btn-sm" href="/positions?id=<?= e($row['id']) ?>">Editar</a>
+                                    <a class="btn-secondary btn-sm" href="<?= app_url('positions?id=' . urlencode((string) $row['id'])) ?>">
+    Editar
+</a>
                                     <?php if ((int) $row['is_active'] === 1): ?>
                                         <form method="post" action="/positions/delete">
                                             <?= csrf_field() ?>

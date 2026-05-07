@@ -68,8 +68,8 @@
                 <div class="full">
                     <button type="submit"><?= $editRecord ? 'Actualizar' : 'Registrar' ?></button>
                     <?php if ($editRecord): ?>
-                        <a class="btn-secondary btn" href="/affiliate-assignments">Cancelar</a>
-                    <?php endif; ?>
+    <a class="btn-secondary btn" href="<?= app_url('affiliate-assignments') ?>">Cancelar</a>
+<?php endif; ?>
                 </div>
             </div>
         </form>
@@ -98,7 +98,7 @@
                             <td><?= e($row['community_name'] ?: '-') ?></td>
                             <td><?= e($row['leader_name'] ?: '-') ?></td>
                             <td class="actions">
-                                <a class="btn-secondary btn-sm" href="/affiliate-assignments?id=<?= e($row['id']) ?>">Editar</a>
+<a class="btn-secondary btn-sm" href="<?= e(app_url('affiliate-assignments?id=' . urlencode((string) $row['id']))) ?>">Editar</a>                                
                                 <form method="post" action="/affiliate-assignments/delete">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= e($row['id']) ?>">

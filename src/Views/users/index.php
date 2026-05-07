@@ -3,7 +3,7 @@
         <h1>Usuarios</h1>
         <p class="small">Administración de cuentas, correo verificado y alcance territorial.</p>
     </div>
-    <a class="btn" href="/users/create">Nuevo usuario</a>
+<a class="btn" href="<?= app_url('users/create') ?>">Nuevo usuario</a>
 </div>
 
 <div class="table-wrap">
@@ -40,7 +40,9 @@
                     <td><?= (int) $row['is_active'] === 1 ? 'Sí' : 'No' ?></td>
                     <td><?= e($row['last_login_at'] ?: '-') ?></td>
                     <td class="actions">
-                        <a class="btn-secondary btn-sm" href="/users/edit?id=<?= e($row['id']) ?>">Editar</a>
+                        <a class="btn-secondary btn-sm" href="<?= app_url('users/edit?id=' . urlencode((string) $row['id'])) ?>">
+    Editar
+</a>
                         <form method="post" action="/users/toggle">
                             <?= csrf_field() ?>
                             <input type="hidden" name="id" value="<?= e($row['id']) ?>">

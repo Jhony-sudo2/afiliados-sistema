@@ -70,7 +70,7 @@
                 <div class="full">
                     <button type="submit"><?= $editRecord ? 'Actualizar' : 'Registrar' ?></button>
                     <?php if ($editRecord): ?>
-                        <a class="btn-secondary btn" href="/candidate-assignments">Cancelar</a>
+<a class="btn-secondary btn" href="<?= app_url('candidate-assignments') ?>">Cancelar</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -102,7 +102,7 @@
                             <td> <?= $row['confirmed'] ? 'Confirmado' : 'En espera' ?> </td>
                             <td><?= e($row['slot'] ?: '-') ?></td>
                             <td class="actions">
-                                <a class="btn-secondary btn-sm" href="/candidate-assignments?id=<?= e($row['id']) ?>">Editar</a>
+                                <a class="btn-secondary btn-sm" href="<?= e(app_url('candidate-assignments?id=' . urlencode((string) $row['id']))) ?>">Editar</a>
                                 <form method="post" action="/candidate-assignments/delete">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= e($row['id']) ?>">

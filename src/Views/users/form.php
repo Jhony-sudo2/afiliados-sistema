@@ -3,7 +3,7 @@
         <h1><?= e($title ?? 'Usuario') ?></h1>
         <p class="small">Asigna rol y alcance geográfico del usuario.</p>
     </div>
-    <a class="btn-secondary btn" href="/users">Volver</a>
+    <a class="btn-secondary btn" href="<?= app_url('users') ?>">Volver</a>
 </div>
 
 <?php
@@ -35,7 +35,8 @@ $form = [
                 <select name="role_id" required>
                     <option value="">Seleccione</option>
                     <?php foreach ($roles as $role): ?>
-                        <option value="<?= e($role['id']) ?>" <?= selected($form['role_id'], $role['id']) ?>><?= e($role['name']) ?></option>
+                        <option value="<?= e($role['id']) ?>" <?= selected($form['role_id'], $role['id']) ?>>
+                            <?= e($role['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -45,32 +46,34 @@ $form = [
             </div>
             <div>
                 <label>Departamento</label>
-                <select name="department_id" id="user_department_id" data-selected="<?= e((string) $form['department_id']) ?>">
+                <select name="department_id" id="user_department_id"
+                    data-selected="<?= e((string) $form['department_id']) ?>">
                     <option value="">Seleccione</option>
                     <?php foreach ($departments as $row): ?>
-                        <option value="<?= e($row['id']) ?>" <?= selected($form['department_id'], $row['id']) ?>><?= e($row['name']) ?></option>
+                        <option value="<?= e($row['id']) ?>" <?= selected($form['department_id'], $row['id']) ?>>
+                            <?= e($row['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div>
                 <label>Municipio</label>
-                <select name="municipality_id" id="user_municipality_id" data-selected="<?= e((string) $form['municipality_id']) ?>">
+                <select name="municipality_id" id="user_municipality_id"
+                    data-selected="<?= e((string) $form['municipality_id']) ?>">
                     <option value="">Seleccione</option>
                     <?php foreach ($municipalities as $row): ?>
-                        <option value="<?= e($row['id']) ?>" data-department="<?= e($row['department_id']) ?>" <?= selected($form['municipality_id'], $row['id']) ?>><?= e($row['name']) ?></option>
+                        <option value="<?= e($row['id']) ?>" data-department="<?= e($row['department_id']) ?>"
+                            <?= selected($form['municipality_id'], $row['id']) ?>><?= e($row['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="full">
                 <label>Comunidad</label>
-                <select name="community_id" id="user_community_id" data-selected="<?= e((string) $form['community_id']) ?>">
+                <select name="community_id" id="user_community_id"
+                    data-selected="<?= e((string) $form['community_id']) ?>">
                     <option value="">Seleccione</option>
                     <?php foreach ($communities as $row): ?>
-                        <option
-                            value="<?= e($row['id']) ?>"
-                            data-department="<?= e($row['department_id']) ?>"
-                            data-municipality="<?= e($row['municipality_id']) ?>"
-                            <?= selected($form['community_id'], $row['id']) ?>>
+                        <option value="<?= e($row['id']) ?>" data-department="<?= e($row['department_id']) ?>"
+                            data-municipality="<?= e($row['municipality_id']) ?>" <?= selected($form['community_id'], $row['id']) ?>>
                             <?= e($row['name']) ?>
                         </option>
                     <?php endforeach; ?>
@@ -84,7 +87,7 @@ $form = [
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    AppForms.bindLocationFilters('user_department_id', 'user_municipality_id', 'user_community_id');
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        AppForms.bindLocationFilters('user_department_id', 'user_municipality_id', 'user_community_id');
+    });
 </script>

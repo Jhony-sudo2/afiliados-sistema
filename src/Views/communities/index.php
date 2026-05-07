@@ -38,7 +38,7 @@
                 <div class="full">
                     <button type="submit"><?= $editRecord ? 'Actualizar' : 'Registrar' ?></button>
                     <?php if ($editRecord): ?>
-                        <a class="btn-secondary btn" href="/communities">Cancelar</a>
+<a class="btn-secondary btn" href="<?= app_url('communities') ?>">Cancelar</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -68,7 +68,7 @@
                             <td><?= e($row['municipality_name']) ?></td>
                             <td><?= (int) $row['is_active'] === 1 ? 'Activo' : 'Inactivo' ?></td>
                             <td class="actions">
-                                <a class="btn-secondary btn-sm" href="/communities?id=<?= e($row['id']) ?>">Editar</a>
+                                <a class="btn-secondary btn-sm" href="<?= e(app_url('communities?id=' . urlencode((string) $row['id']))) ?>">Editar</a>
                                 <?php if ((int) $row['is_active'] === 1): ?>
                                     <form method="post" action="/communities/delete">
                                         <?= csrf_field() ?>

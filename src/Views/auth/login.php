@@ -27,7 +27,7 @@
     </form>
 
     <p class="small" style="margin-top:16px;">
-      <a href="/forgot-password">¿Olvidaste tu contraseña?</a>
+      <a href="<?= app_url('forgot-password') ?>">¿Olvidaste tu contraseña?</a>
     </p>
   </div>
 

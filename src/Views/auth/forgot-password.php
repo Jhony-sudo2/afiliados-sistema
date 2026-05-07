@@ -7,6 +7,6 @@
     <input id="email" type="email" name="email" value="<?= e(old('email')) ?>" required>
     <div style="margin-top:16px; display:flex; gap:10px;">
         <button type="submit">Enviar enlace</button>
-        <a class="btn-secondary btn" href="/login">Volver</a>
+        <a class="btn-secondary btn" href="<?= app_url('login') ?>">Volver</a>
     </div>
 </form>
