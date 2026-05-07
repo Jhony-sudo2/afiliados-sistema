@@ -15,7 +15,7 @@ $isAuthView = str_contains($contentView ?? '', DIRECTORY_SEPARATOR . 'auth' . DI
     <script defer src="<?= asset('js/app.js') ?>"></script>
 </head>
 <body>
-<?php if ($isAuthView): ?>
+<?php if (false): ?>
     <div class="auth-wrap">
         <div class="auth-card card">
             <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
