@@ -15,11 +15,30 @@ function e(mixed $value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
+function app_base_path(): string
+{
+    $appUrlPath = parse_url(app_env('APP_URL', ''), PHP_URL_PATH);
+
+    if (!$appUrlPath) {
+        return '';
+    }
+
+    return rtrim($appUrlPath, '/');
+}
 
 function current_path(): string
 {
     $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    return rtrim($uri ?: '/', '/') ?: '/';
+    $uri = rtrim($uri ?: '/', '/') ?: '/';
+
+    $basePath = app_base_path();
+
+    if ($basePath !== '' && str_starts_with($uri, $basePath)) {
+        $uri = substr($uri, strlen($basePath));
+        $uri = rtrim($uri ?: '/', '/') ?: '/';
+    }
+
+    return $uri;
 }
 
 function current_query(): array
@@ -36,7 +55,8 @@ function is_post(): bool
 
 function redirect(string $path, array $query = []): never
 {
-    $url = $path;
+    $url = app_url($path);
+
     if ($query !== []) {
         $url .= '?' . http_build_query($query);
     }
